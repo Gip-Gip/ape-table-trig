@@ -1,7 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 
 pub use ape_table_trig_macros::*;
-use libm::{roundf, floorf};
 
 pub use core::f32::consts::PI as PI_F32;
 pub use core::f64::consts::PI as PI_F64;
@@ -18,6 +17,7 @@ pub const FULL_CIRC_F64: f64 = 2.0 * PI_F64;
 pub const GEN_LIMIT_F32: f32 = HALF_CIRC_F32;
 pub const GEN_LIMIT_F64: f64 = HALF_CIRC_F64;
 
+#[inline]
 pub fn abs_32(float: f32) -> f32 {
     f32::from_ne_bytes(
         (u32::from_ne_bytes(
@@ -44,11 +44,12 @@ impl TrigTableF32 {
 
         let table_len = self.table.len();
 
-        let index = roundf((rad_mod / GEN_LIMIT_F32) * (table_len as f32)) as usize;
+        // Add 0.5 to do a quick round...
+        let index = (((rad_mod / GEN_LIMIT_F32) * (table_len as f32)) + 0.5) as usize;
 
-        let sin = self.table[index];
+        let sin = self.table[index % table_len];
 
-        let is_negative = is_negative ^ ((floorf(radians / GEN_LIMIT_F32) as u32) % 2 == 1);
+        let is_negative = is_negative ^ (((radians / GEN_LIMIT_F32) as u32) % 2 == 1);
 
         match is_negative {
             true => -sin,
@@ -56,6 +57,7 @@ impl TrigTableF32 {
         }
     }
 
+    #[inline]
     pub fn cos(&self, radians: f32) -> f32 {
         self.sin(radians + QUART_CIRC_F32)
     }
