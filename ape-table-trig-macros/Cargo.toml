@@ -2,13 +2,13 @@
 name = "ape-table-trig-macros"
 version = "0.1.0"
 edition = "2021"
-authors.workspace = true
-description.workspace = true
-license.workspace = true
-readme.workspace = true
-keywords.workspace = true
-catagories.workspace = true
-repository.workspace = true 
+authors = ["Charles Thompson"]
+license = "MIT"
+readme = "README.md"
+keywords = ["proc-macros"]
+catagories = ["mathematics", "embedded", "no_std"]
+description = "proc macros for ape-table-trig"
+repository = "https://github.com/Gip-Gip/ape-table-trig"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
