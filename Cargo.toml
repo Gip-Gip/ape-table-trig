@@ -2,7 +2,13 @@
 name = "ape-table-trig"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Charles Thompson"]
+license = "MIT"
+readme = "README.md"
+keywords = ["math", "trigonometry", "no_std", "embedded"]
+catagories = ["mathematics", "embedded", "no_std"]
+description = "implementations of sin, cos, and tan using precalculated tables"
+repository = "https://github.com/Gip-Gip/ape-table-trig"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]

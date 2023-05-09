@@ -17,6 +17,7 @@
 //!     // Calculate the sine of 1π radians
 //!     let sine = table.sin(PI_F32);
 //! }
+//! ```
 
 #![cfg_attr(not(test), no_std)]
 
