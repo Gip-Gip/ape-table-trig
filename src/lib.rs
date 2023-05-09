@@ -20,7 +20,6 @@
 //! }
 //! ```
 
-#![cfg_attr(not(test), no_std)]
 
 pub use ape_table_trig_macros::*;
 
@@ -45,9 +44,9 @@ pub const FULL_CIRC_F64: f64 = 2.0 * PI_F64;
 /// Generation limit for the trig table. Currently the table generation generates
 /// sin(0)..sin(1π), and then uses some math to finesse the table to work for all
 /// other values. F32.
-pub const GEN_LIMIT_F32: f32 = HALF_CIRC_F32;
+pub const GEN_LIMIT_F32: f32 = QUART_CIRC_F32;
 /// Generation limit for the trig table. F64
-pub const GEN_LIMIT_F64: f64 = HALF_CIRC_F64;
+pub const GEN_LIMIT_F64: f64 = QUART_CIRC_F64;
 
 #[inline]
 /// Get the absolute value of a float. F32.
@@ -58,6 +57,22 @@ pub fn abs_f32(float: f32) -> f32 {
             float.to_ne_bytes()
         ) & (u32::MAX >> 1)).to_ne_bytes()
     )
+}
+
+#[inline]
+/// Corrected remainder due to floating point silliness
+pub fn rem_32(a: f32, b: f32) -> f32 {
+    let a_over_b = ((a / b) as u32) as f32;
+
+    a - (a_over_b * b)
+}
+
+#[inline]
+/// Corrected remainder due to floating point silliness
+pub fn rem_64(a: f64, b: f64) -> f64 {
+    let a_over_b = ((a / b) as u64) as f64;
+
+    a - (a_over_b * b)
 }
 
 #[inline]
@@ -88,16 +103,30 @@ impl TrigTableF32 {
     pub fn sin(&self, radians: f32) -> f32 {
         let is_negative = radians < 0.0;
         let radians = abs_f32(radians);
-        let rad_mod = radians % GEN_LIMIT_F32;
+
+        let rad_mod = rem_32(radians, GEN_LIMIT_F32);
+
+        // Every other quadrant reverse the sine
+        let is_reverse = ((radians / GEN_LIMIT_F32) as u32) % 2 == 1;
 
         let table_len = self.table.len();
 
         // Add 0.5 to do a quick round...
         let index = (((rad_mod / GEN_LIMIT_F32) * (table_len as f32)) + 0.5) as usize;
 
-        let sin = self.table[index % table_len];
+        // Reverse the index if necissary...
+        let index = match is_reverse {
+            false => index,
+            true => table_len - index,
+        };
 
-        let is_negative = is_negative ^ (((radians / GEN_LIMIT_F32) as u32) % 2 == 1);
+        let sin = match index >= table_len {
+            false => self.table[index],
+            true => 1.0,
+        };
+
+        // Every two quadrants negate the sine
+        let is_negative = is_negative ^ (((radians / (2.0 * GEN_LIMIT_F32)) as u32) % 2 == 1);
 
         match is_negative {
             true => -sin,
@@ -135,16 +164,30 @@ impl TrigTableF64 {
     pub fn sin(&self, radians: f64) -> f64 {
         let is_negative = radians < 0.0;
         let radians = abs_f64(radians);
-        let rad_mod = radians % GEN_LIMIT_F64;
+
+        let rad_mod = rem_64(radians, GEN_LIMIT_F64);
+
+        // Every other quadrant reverse the sine
+        let is_reverse = ((radians / GEN_LIMIT_F64) as u64) % 2 == 1;
 
         let table_len = self.table.len();
 
         // Add 0.5 to do a quick round...
         let index = (((rad_mod / GEN_LIMIT_F64) * (table_len as f64)) + 0.5) as usize;
 
-        let sin = self.table[index % table_len];
+        // Reverse the index if necissary...
+        let index = match is_reverse {
+            false => index,
+            true => table_len - index,
+        };
 
-        let is_negative = is_negative ^ (((radians / GEN_LIMIT_F64) as u64) % 2 == 1);
+        let sin = match index >= table_len {
+            false => self.table[index],
+            true => 1.0,
+        };
+
+        // Every two quadrants negate the sine
+        let is_negative = is_negative ^ (((radians / (2.0 * GEN_LIMIT_F64)) as u64) % 2 == 1);
 
         match is_negative {
             true => -sin,
@@ -169,8 +212,8 @@ impl TrigTableF64 {
 mod tests {
     use super::*;
 
-    static TABLE_F32: [f32; 2_000] = trig_table_gen_f32!(2000);
-    static TABLE_F64: [f64; 2_000_000] = trig_table_gen_f64!(2000000);
+    static TABLE_F32: [f32; 1_000] = trig_table_gen_f32!(1000);
+    static TABLE_F64: [f64; 1_000_000] = trig_table_gen_f64!(1000000);
 
     #[test]
     fn test_sin_f32() {
@@ -178,7 +221,7 @@ mod tests {
 
         // We can only test half the table since floating point innacuracy
         // kicks in past the GEN_LIMIT
-        for i in 0..2000 {
+        for i in 0..1000 {
             // Go through the table and verify everything
             let radians = (i as f32)/4000.0 * FULL_CIRC_F32;
 
@@ -206,7 +249,7 @@ mod tests {
 
         // We can only test half the table since floating point innacuracy
         // kicks in past the GEN_LIMIT
-        for i in 0..2_000_000 {
+        for i in 0..1_000_000 {
             // Go through the table and verify everything
             let radians = (i as f64)/4_000_000.0 * FULL_CIRC_F64;
 

@@ -1,6 +1,6 @@
 [package]
 name = "ape-table-trig"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Charles Thompson"]
 license = "MIT"
@@ -18,7 +18,7 @@ members = [
 ]
 
 [dependencies]
-ape-table-trig-macros = { path = "./ape-table-trig-macros", version = "0.1.0" }
+ape-table-trig-macros = { path = "./ape-table-trig-macros", version = "0.2.0" }
 
 [dev-dependencies]
 libm = "0.2.6"
