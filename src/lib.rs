@@ -9,6 +9,7 @@
 //! ```rust
 //! use ape_table_trig::*;
 //!
+//! // Table has an accuracy down to 1πmrad
 //! static TABLE: [f32; 1000] = trig_table_gen_f32!(1000);
 //!
 //! fn main() {

@@ -10,6 +10,7 @@ be no_std compatible out of the box.
 ```rust
 use ape_table_trig::*;
 
+// Table has an accuracy down to 1πmrad
 static TABLE: [f32; 1000] = trig_table_gen_f32!(1000);
 
 fn main() {
@@ -17,4 +18,5 @@ fn main() {
 
     // Calculate the sine of 1π radians
     let sine = table.sin(PI_F32);
-}```
+}
+```
