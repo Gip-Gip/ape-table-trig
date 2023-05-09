@@ -1,14 +1,8 @@
 use std::f32::consts::PI as PI_F32;
 use std::f64::consts::PI as PI_F64;
 
-const QUART_CIRC_F32: f32 = 0.5 * PI_F32;
-const QUART_CIRC_F64: f64 = 0.5 * PI_F64;
-
 const HALF_CIRC_F32: f32 = PI_F32;
 const HALF_CIRC_F64: f64 = PI_F64;
-
-const FULL_CIRC_F32: f32 = 2.0 * PI_F32;
-const FULL_CIRC_F64: f64 = 2.0 * PI_F64;
 
 const GEN_LIMIT_F32: f32 = HALF_CIRC_F32;
 const GEN_LIMIT_F64: f64 = HALF_CIRC_F64;
@@ -16,6 +10,7 @@ const GEN_LIMIT_F64: f64 = HALF_CIRC_F64;
 use proc_macro::*;
 
 #[proc_macro]
+/// Generate a trig table of F32s. Provide the size of the table in usize.
 pub fn trig_table_gen_f32(tokens: TokenStream) -> TokenStream {
     let size_str = format!("{}", tokens);
 
@@ -36,6 +31,7 @@ pub fn trig_table_gen_f32(tokens: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+/// Generate a trig table of F64s. Provide the size of the table in usize.
 pub fn trig_table_gen_f64(tokens: TokenStream) -> TokenStream {
     let size_str = format!("{}", tokens);
 

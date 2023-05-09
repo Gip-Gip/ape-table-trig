@@ -15,6 +15,7 @@ members = [
 ape-table-trig-macros = { path = "./ape-table-trig-macros"}
 
 [dev-dependencies]
+libm = "0.2.6"
 criterion = { version = "0.3.6", features = ["html_reports"]}
 
 [[bench]]
