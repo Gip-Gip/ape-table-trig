@@ -11,23 +11,34 @@ use proc_macro::*;
 
 #[proc_macro]
 /// Generate a trig table of F32s. Provide the size of the table in usize.
+/// pub static TRIG_TABLE: ape_table_trig::TrigTableF32 = ape_table_trig::trig_table_gen_f32!(1000);
+/// pub static TRIG_TABLE: ape_table_trig::TrigTableF32 = {
+///    const _TABLE_F32_1000: [f32; 1000] = [ ... ];
+///    ape_table_trig::TrigTableF32::new(&_TABLE_F32_1000)
+/// }
 pub fn trig_table_gen_f32(tokens: TokenStream) -> TokenStream {
     let size_str = format!("{}", tokens);
 
-    let size: usize = size_str.parse().expect("Please provide the size of the table as a usize!");
+    let size: usize = size_str
+        .parse()
+        .expect("Please provide the size of the table as a usize!");
 
-    let mut generated_code: String = "[".to_string();
+    let mut generated_code: String = format!("{{\nconst _TABLE_F32_{}: [f32; {}] = [", size, size);
 
     for i in 0..size {
         // We only need to calculate the sin up to 0.5π
-        let radians = (i as f32)/(size as f32) * GEN_LIMIT_F32;
+        let radians = (i as f32) / (size as f32) * GEN_LIMIT_F32;
 
         generated_code.push_str(&format!("{:e},", radians.sin()));
     }
 
-    generated_code.push(']');
-    
-    generated_code.parse().expect("Could not parse for some reason!")
+    generated_code.push_str("];\n");
+
+    generated_code.push_str(&format!("TrigTableF32::new(&_TABLE_F32_{})\n}}", size));
+
+    generated_code
+        .parse()
+        .expect("Could not parse for some reason!")
 }
 
 #[proc_macro]
@@ -35,18 +46,24 @@ pub fn trig_table_gen_f32(tokens: TokenStream) -> TokenStream {
 pub fn trig_table_gen_f64(tokens: TokenStream) -> TokenStream {
     let size_str = format!("{}", tokens);
 
-    let size: usize = size_str.parse().expect("Please provide the size of the table as a usize!");
+    let size: usize = size_str
+        .parse()
+        .expect("Please provide the size of the table as a usize!");
 
-    let mut generated_code: String = "[".to_string();
+    let mut generated_code: String = format!("{{\nconst _TABLE_F64_{}: [f64; {}] = [", size, size);
 
     for i in 0..size {
         // We only need to calculate the sin up to 0.5π
-        let radians = (i as f64)/(size as f64) * GEN_LIMIT_F64;
+        let radians = (i as f64) / (size as f64) * GEN_LIMIT_F64;
 
         generated_code.push_str(&format!("{:e},", radians.sin()));
     }
 
-    generated_code.push(']');
-    
-    generated_code.parse().expect("Could not parse for some reason!")
+    generated_code.push_str("];\n");
+
+    generated_code.push_str(&format!("TrigTableF64::new(&_TABLE_F64_{})\n}}", size));
+
+    generated_code
+        .parse()
+        .expect("Could not parse for some reason!")
 }

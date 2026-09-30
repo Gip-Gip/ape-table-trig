@@ -20,7 +20,6 @@
 //! }
 //! ```
 
-
 pub use ape_table_trig_macros::*;
 
 pub use core::f32::consts::PI as PI_F32;
@@ -50,18 +49,14 @@ pub const GEN_LIMIT_F64: f64 = QUART_CIRC_F64;
 
 #[inline]
 /// Get the absolute value of a float. F32.
-pub fn abs_f32(float: f32) -> f32 {
+pub const fn abs_f32(float: f32) -> f32 {
     // Ungodly ugly, but it optimises down really well
-    f32::from_ne_bytes(
-        (u32::from_ne_bytes(
-            float.to_ne_bytes()
-        ) & (u32::MAX >> 1)).to_ne_bytes()
-    )
+    f32::from_ne_bytes((u32::from_ne_bytes(float.to_ne_bytes()) & (u32::MAX >> 1)).to_ne_bytes())
 }
 
 #[inline]
 /// Corrected remainder due to floating point silliness
-pub fn rem_32(a: f32, b: f32) -> f32 {
+pub const fn rem_32(a: f32, b: f32) -> f32 {
     let a_over_b = ((a / b) as u32) as f32;
 
     a - (a_over_b * b)
@@ -69,7 +64,7 @@ pub fn rem_32(a: f32, b: f32) -> f32 {
 
 #[inline]
 /// Corrected remainder due to floating point silliness
-pub fn rem_64(a: f64, b: f64) -> f64 {
+pub const fn rem_64(a: f64, b: f64) -> f64 {
     let a_over_b = ((a / b) as u64) as f64;
 
     a - (a_over_b * b)
@@ -77,13 +72,9 @@ pub fn rem_64(a: f64, b: f64) -> f64 {
 
 #[inline]
 /// Get the absolute value of a float. F64.
-pub fn abs_f64(float: f64) -> f64 {
+pub const fn abs_f64(float: f64) -> f64 {
     // Ungodly ugly, but it optimises down really well
-    f64::from_ne_bytes(
-        (u64::from_ne_bytes(
-            float.to_ne_bytes()
-        ) & (u64::MAX >> 1)).to_ne_bytes()
-    )
+    f64::from_ne_bytes((u64::from_ne_bytes(float.to_ne_bytes()) & (u64::MAX >> 1)).to_ne_bytes())
 }
 
 /// Used to perform sin, cos, and tan functions on trig tables. F32.
@@ -93,14 +84,12 @@ pub struct TrigTableF32 {
 
 impl TrigTableF32 {
     /// Create a table struct with a reference to a static table.
-    pub fn new(table: &'static [f32]) -> Self {
-        Self {
-            table
-        }
+    pub const fn new(table: &'static [f32]) -> Self {
+        Self { table }
     }
 
     /// Calculate the approximate sine of the radians provided.
-    pub fn sin(&self, radians: f32) -> f32 {
+    pub const fn sin(&self, radians: f32) -> f32 {
         let is_negative = radians < 0.0;
         let radians = abs_f32(radians);
 
@@ -136,14 +125,21 @@ impl TrigTableF32 {
 
     #[inline]
     /// Calculate the approximate cosine of the radians provided.
-    pub fn cos(&self, radians: f32) -> f32 {
+    pub const fn cos(&self, radians: f32) -> f32 {
         self.sin(radians + QUART_CIRC_F32)
     }
 
     #[inline]
     /// Calculate the approximate tangent of the radians provided.
-    pub fn tan(&self, radians: f32) -> f32 {
+    pub const fn tan(&self, radians: f32) -> f32 {
         self.sin(radians) / self.cos(radians)
+    }
+
+    #[inline]
+    pub const fn sin_cos(&self, radians: f32) -> (f32, f32) {
+        let sin = self.sin(radians);
+        let cos = self.cos(radians);
+        (sin, cos)
     }
 }
 
@@ -154,14 +150,12 @@ pub struct TrigTableF64 {
 
 impl TrigTableF64 {
     /// Create a table struct with a reference to a static table.
-    pub fn new(table: &'static [f64]) -> Self {
-        Self {
-            table
-        }
+    pub const fn new(table: &'static [f64]) -> Self {
+        Self { table }
     }
 
     /// Calculate the approximate sine of the radians provided.
-    pub fn sin(&self, radians: f64) -> f64 {
+    pub const fn sin(&self, radians: f64) -> f64 {
         let is_negative = radians < 0.0;
         let radians = abs_f64(radians);
 
@@ -197,77 +191,82 @@ impl TrigTableF64 {
 
     #[inline]
     /// Calculate the approximate cosine of the radians provided.
-    pub fn cos(&self, radians: f64) -> f64 {
+    pub const fn cos(&self, radians: f64) -> f64 {
         self.sin(radians + QUART_CIRC_F64)
     }
 
     #[inline]
     /// Calculate the approximate tangent of the radians provided.
-    pub fn tan(&self, radians: f64) -> f64 {
+    pub const fn tan(&self, radians: f64) -> f64 {
         self.sin(radians) / self.cos(radians)
+    }
+
+    #[inline]
+    pub const fn sin_cos(&self, radians: f64) -> (f64, f64) {
+        let sin = self.sin(radians);
+        let cos = self.cos(radians);
+        (sin, cos)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::TrigTableF32;
+    use crate::TrigTableF64;
 
-    static TABLE_F32: [f32; 1_000] = trig_table_gen_f32!(1000);
-    static TABLE_F64: [f64; 1_000_000] = trig_table_gen_f64!(1000000);
+    static TABLE_F32: TrigTableF32 = ape_table_trig_macros::trig_table_gen_f32!(1000);
+    static TABLE_F64: TrigTableF64 = ape_table_trig_macros::trig_table_gen_f64!(1000000);
 
     #[test]
     fn test_sin_f32() {
-        let table = TrigTableF32::new(&TABLE_F32);
-
         // We can only test half the table since floating point innacuracy
         // kicks in past the GEN_LIMIT
         for i in 0..1000 {
             // Go through the table and verify everything
-            let radians = (i as f32)/4000.0 * FULL_CIRC_F32;
+            let radians = (i as f32) / 4000.0 * FULL_CIRC_F32;
 
             let sin1 = radians.sin();
-            let sin2 = table.sin(radians);
+            let sin2 = TABLE_F32.sin(radians);
 
             assert_eq!(sin1, sin2, "\ni={}", i);
         }
 
         // Ensure the quadrants work as expected
-        assert_eq!(table.sin(QUART_CIRC_F32), 1.0);
-        assert_eq!(table.sin(HALF_CIRC_F32), 0.0);
-        assert_eq!(table.sin(HALF_CIRC_F32 + QUART_CIRC_F32), -1.0);
-        assert_eq!(table.sin(FULL_CIRC_F32), 0.0);
-        
-        assert_eq!(table.sin(-QUART_CIRC_F32), -1.0);
-        assert_eq!(table.sin(-HALF_CIRC_F32), 0.0);
-        assert_eq!(table.sin(-HALF_CIRC_F32 - QUART_CIRC_F32), 1.0);
-        assert_eq!(table.sin(-FULL_CIRC_F32), 0.0);
+        assert_eq!(TABLE_F32.sin(QUART_CIRC_F32), 1.0);
+        assert_eq!(TABLE_F32.sin(HALF_CIRC_F32), 0.0);
+        assert_eq!(TABLE_F32.sin(HALF_CIRC_F32 + QUART_CIRC_F32), -1.0);
+        assert_eq!(TABLE_F32.sin(FULL_CIRC_F32), 0.0);
+
+        assert_eq!(TABLE_F32.sin(-QUART_CIRC_F32), -1.0);
+        assert_eq!(TABLE_F32.sin(-HALF_CIRC_F32), 0.0);
+        assert_eq!(TABLE_F32.sin(-HALF_CIRC_F32 - QUART_CIRC_F32), 1.0);
+        assert_eq!(TABLE_F32.sin(-FULL_CIRC_F32), 0.0);
     }
-    
+
     #[test]
     fn test_sin_f64() {
-        let table = TrigTableF64::new(&TABLE_F64);
-
         // We can only test half the table since floating point innacuracy
         // kicks in past the GEN_LIMIT
         for i in 0..1_000_000 {
             // Go through the table and verify everything
-            let radians = (i as f64)/4_000_000.0 * FULL_CIRC_F64;
+            let radians = (i as f64) / 4_000_000.0 * FULL_CIRC_F64;
 
             let sin1 = radians.sin();
-            let sin2 = table.sin(radians);
+            let sin2 = TABLE_F64.sin(radians);
 
             assert_eq!(sin1, sin2, "\ni={}", i);
         }
 
         // Ensure the quadrants work as expected
-        assert_eq!(table.sin(QUART_CIRC_F64), 1.0);
-        assert_eq!(table.sin(HALF_CIRC_F64), 0.0);
-        assert_eq!(table.sin(HALF_CIRC_F64 + QUART_CIRC_F64), -1.0);
-        assert_eq!(table.sin(FULL_CIRC_F64), 0.0);
-        
-        assert_eq!(table.sin(-QUART_CIRC_F64), -1.0);
-        assert_eq!(table.sin(-HALF_CIRC_F64), 0.0);
-        assert_eq!(table.sin(-HALF_CIRC_F64 - QUART_CIRC_F64), 1.0);
-        assert_eq!(table.sin(-FULL_CIRC_F64), 0.0);
+        assert_eq!(TABLE_F64.sin(QUART_CIRC_F64), 1.0);
+        assert_eq!(TABLE_F64.sin(HALF_CIRC_F64), 0.0);
+        assert_eq!(TABLE_F64.sin(HALF_CIRC_F64 + QUART_CIRC_F64), -1.0);
+        assert_eq!(TABLE_F64.sin(FULL_CIRC_F64), 0.0);
+
+        assert_eq!(TABLE_F64.sin(-QUART_CIRC_F64), -1.0);
+        assert_eq!(TABLE_F64.sin(-HALF_CIRC_F64), 0.0);
+        assert_eq!(TABLE_F64.sin(-HALF_CIRC_F64 - QUART_CIRC_F64), 1.0);
+        assert_eq!(TABLE_F64.sin(-FULL_CIRC_F64), 0.0);
     }
 }
